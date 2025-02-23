@@ -155,6 +155,8 @@ export default class RecordedHLSStreamingVideo extends BaseVideo {
             return;
         }
 
+        this.video.setAttribute('playsinline', 'true');
+
         const streamId = this.videoState.getStreamId();
         if (streamId === null) {
             this.snackbarState.open({
@@ -169,19 +171,7 @@ export default class RecordedHLSStreamingVideo extends BaseVideo {
             // hls.js 非対応
             this.setSrc(videoSrc);
             this.load();
-            this.play()
-                .then(async () => {
-                    if (this.video === null) {
-                        return;
-                    }
-                    this.video.currentTime = 0;
-                })
-                .catch(async err => {
-                    if (this.video === null) {
-                        return;
-                    }
-                    this.video.currentTime = 0;
-                });
+            this.play().catch(() => {});
             this.b24RenderState.init(this.video);
         } else {
             // hls.js 対応

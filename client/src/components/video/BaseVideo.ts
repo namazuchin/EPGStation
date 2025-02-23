@@ -290,18 +290,25 @@ export default abstract class BaseVide extends Vue {
      * pip 切り替え
      */
     public requestPictureInPicture(): void {
-        if (this.video === null || typeof (this.video as any).requestPictureInPicture !== 'function') {
-            return;
-        }
+        if (this.video === null) return;
 
-        try {
-            if (!(document as any).pictureInPictureElement) {
-                (this.$refs.video as any).requestPictureInPicture();
+        const video = this.video as any;
+        
+        // 標準のPiP APIを試す
+        if (typeof video.requestPictureInPicture === 'function') {
+            if (document.pictureInPictureElement) {
+                document.exitPictureInPicture().catch(console.error);
             } else {
-                (this.video as any).requestPictureInPicture();
+                video.requestPictureInPicture().catch(console.error);
             }
-        } catch (err) {
-            console.error(err);
+        }
+        // Safari用のWebKit PiP APIをチェック
+        else if (typeof video.webkitEnterPictureInPicture === 'function') {
+            if (video.webkitPresentationMode === 'picture-in-picture') {
+                video.webkitExitPictureInPicture();
+            } else {
+                video.webkitEnterPictureInPicture();
+            }
         }
     }
 

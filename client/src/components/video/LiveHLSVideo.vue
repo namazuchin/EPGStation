@@ -45,6 +45,48 @@ export default class LiveHLSVideo extends BaseVideo {
             clearInterval(this.checkEnabledTimerId);
             super.mounted();
         }, 1000);
+
+        if (HLSUtil.isSupportedHLSjs() === false) {
+            const streamId = this.videoState.getStreamId();
+            if (streamId === null) {
+                this.snackbarState.open({
+                    color: 'error',
+                    text: 'ストリーム id 取得に失敗',
+                });
+                throw new Error('StreamIdIsNull');
+            }
+
+            const videoSrc = `./streamfiles/stream${streamId}.m3u8`;
+            this.setSrc(videoSrc);
+            this.load();
+            if (this.video !== null) {
+                this.video.setAttribute('playsinline', 'true');
+                this.b24RenderState.init(this.video);
+            }
+        } else {
+            // hls.js 対応
+            const streamId = this.videoState.getStreamId();
+            if (streamId === null) {
+                this.snackbarState.open({
+                    color: 'error',
+                    text: 'ストリーム id 取得に失敗',
+                });
+                throw new Error('StreamIdIsNull');
+            }
+
+            const videoSrc = `./streamfiles/stream${streamId}.m3u8`;
+            this.hls = new Hls();
+            this.hls.loadSource(videoSrc);
+            if (this.video !== null) {
+                this.hls.attachMedia(this.video);
+                this.hls.on(Hls.Events.MANIFEST_PARSED, async () => {
+                    if (this.video !== null) {
+                        await this.video.play().catch(err => {});
+                    }
+                });
+                this.b24RenderState.init(this.video, this.hls);
+            }
+        }
     }
 
     public async beforeDestroy(): Promise<void> {
@@ -82,18 +124,23 @@ export default class LiveHLSVideo extends BaseVideo {
             // hls.js 非対応
             this.setSrc(videoSrc);
             this.load();
-            this.b24RenderState.init(this.video);
+            if (this.video !== null) {
+                this.video.setAttribute('playsinline', 'true');
+                this.b24RenderState.init(this.video);
+            }
         } else {
             // hls.js 対応
             this.hls = new Hls();
             this.hls.loadSource(videoSrc);
-            this.hls.attachMedia(this.video);
+            if (this.video !== null) {
+                this.hls.attachMedia(this.video);
+                this.b24RenderState.init(this.video, this.hls);
+            }
             this.hls.on(Hls.Events.MANIFEST_PARSED, async () => {
                 if (this.video !== null) {
                     await this.video.play().catch(err => {});
                 }
             });
-            this.b24RenderState.init(this.video, this.hls);
         }
     }
 
