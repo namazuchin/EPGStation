@@ -155,6 +155,8 @@ export default class RecordedHLSStreamingVideo extends BaseVideo {
             return;
         }
 
+        this.video.setAttribute('playsinline', 'true');
+
         const streamId = this.videoState.getStreamId();
         if (streamId === null) {
             this.snackbarState.open({
