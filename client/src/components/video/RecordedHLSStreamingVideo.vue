@@ -171,7 +171,19 @@ export default class RecordedHLSStreamingVideo extends BaseVideo {
             // hls.js 非対応
             this.setSrc(videoSrc);
             this.load();
-            this.play().catch(() => {});
+            this.play()
+                .then(async () => {
+                    if (this.video === null) {
+                        return;
+                    }
+                    this.video.currentTime = 0;
+                })
+                .catch(async err => {
+                    if (this.video === null) {
+                        return;
+                    }
+                    this.video.currentTime = 0;
+                });
             this.b24RenderState.init(this.video);
         } else {
             // hls.js 対応
